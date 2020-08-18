@@ -1,5 +1,5 @@
 """
-exodus.py v 1.19.1 (seacas-beta) is a python wrapper of some of the exodus library
+exodus.py v 1.19.2 (seacas-beta) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -70,10 +70,10 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.19.1 (seacas-py3)"
+EXODUS_PY_VERSION = "1.19.2 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.19.1 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.19.2 (seacas-py3), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -543,7 +543,7 @@ class attribute:
 
     def __repr__(self):
         return "attribute(name=%r, entity_type=%r, entity_id=%r, values=%r)" % (self.name,self.entity_type,self.entity_id,self.values)
-    
+
 class ex_attribute(ctypes.Structure):
     """
     Used for accessing underlying exodus library...
@@ -656,6 +656,17 @@ class exodus:
                     self.init_params.title = title
                 self.put_info_ext(self.init_params)
             else:
+                if numNodeSets is None:
+                    numNodeSets = 0
+                if numSideSets is None:
+                    numSideSets = 0
+                if numNodes is None:
+                    numNodes = 0
+                if numElems is None:
+                    numElems = 0
+                if numBlocks is None:
+                    numBlocks = 0
+
                 info = [title, numDims, numNodes, numElems, numBlocks,
                         numNodeSets, numSideSets]
                 assert None not in info
@@ -709,7 +720,7 @@ class exodus:
         num_ss_vars = self.get_variable_number('EX_SIDE_SET')
         num_assem_vars = self.get_reduction_variable_number('EX_ASSEMBLY')
         num_blob_vars = self.get_reduction_variable_number('EX_BLOB')
-        
+
         print("\n Database: {0}\n"
               " Title:\t{17}\n\n"
               " Number of spatial dimensions = {1:3d}\t"
@@ -744,8 +755,8 @@ class exodus:
                       self.num_side_sets(),
                       total_ns_nodes, total_sides,
                       num_glo_vars, num_nod_vars, num_ele_vars,
-                      num_ns_vars, num_ss_vars, self.num_times(), self.title(), 
-                      self.num_assembly(), num_assem_vars, 
+                      num_ns_vars, num_ss_vars, self.num_times(), self.title(),
+                      self.num_assembly(), num_assem_vars,
                       self.num_blob(), num_blob_vars))
     #
     # build the info struct
@@ -6413,7 +6424,7 @@ def internal_add_variables(exo, obj_type, entvars, debugPrint):
 
     if len(entvars) == 0:
         return
-    
+
     if debugPrint:
         print("Construct Truth Table for additional variables")
 

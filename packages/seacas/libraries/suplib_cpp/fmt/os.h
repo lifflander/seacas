@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>  // for strtod_l
+#include <memory>
 
 #if defined __APPLE__ || defined(__FreeBSD__)
 #  include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
@@ -29,7 +30,7 @@
 #if FMT_HAS_INCLUDE("winapifamily.h")
 #  include <winapifamily.h>
 #endif
-#if FMT_HAS_INCLUDE("fcntl.h") && \
+#if (FMT_HAS_INCLUDE(<fcntl.h>) || defined(__APPLE__)) && \
     (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
 #  include <fcntl.h>  // for O_RDONLY
 #  define FMT_USE_FCNTL 1
@@ -50,7 +51,7 @@
 #ifdef FMT_SYSTEM
 #  define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
 #else
-#  define FMT_SYSTEM(call) call
+#  define FMT_SYSTEM(call) ::call
 #  ifdef _WIN32
 // Fix warnings about deprecated symbols.
 #    define FMT_POSIX_CALL(call) ::_##call
@@ -133,7 +134,7 @@ class error_code {
 };
 
 #ifdef _WIN32
-namespace internal {
+namespace detail {
 // A converter from UTF-16 to UTF-8.
 // It is only provided for Windows since other systems support UTF-8 natively.
 class utf16_to_utf8 {
@@ -156,7 +157,7 @@ class utf16_to_utf8 {
 
 FMT_API void format_windows_error(buffer<char>& out, int error_code,
                                   string_view message) FMT_NOEXCEPT;
-}  // namespace internal
+}  // namespace detail
 
 /** A Windows error. */
 class windows_error : public system_error {
@@ -277,7 +278,8 @@ class file {
   enum {
     RDONLY = FMT_POSIX(O_RDONLY),  // Open for reading only.
     WRONLY = FMT_POSIX(O_WRONLY),  // Open for writing only.
-    RDWR = FMT_POSIX(O_RDWR)       // Open for reading and writing.
+    RDWR = FMT_POSIX(O_RDWR),      // Open for reading and writing.
+    CREATE = FMT_POSIX(O_CREAT)    // Create if the file doesn't exist.
   };
 
   // Constructs a file object which doesn't represent any file.
@@ -313,10 +315,10 @@ class file {
   FMT_API long long size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
-  FMT_API std::size_t read(void* buffer, std::size_t count);
+  FMT_API size_t read(void* buffer, size_t count);
 
   // Attempts to write count bytes from the specified buffer to the file.
-  FMT_API std::size_t write(const void* buffer, std::size_t count);
+  FMT_API size_t write(const void* buffer, size_t count);
 
   // Duplicates a file descriptor with the dup function and returns
   // the duplicate as a file object.
@@ -341,6 +343,99 @@ class file {
 
 // Returns the memory page size.
 long getpagesize();
+
+namespace detail {
+
+struct buffer_size {
+  size_t value = 0;
+  buffer_size operator=(size_t val) const {
+    auto bs = buffer_size();
+    bs.value = val;
+    return bs;
+  }
+};
+
+struct ostream_params {
+  int oflag = file::WRONLY | file::CREATE;
+  size_t buffer_size = BUFSIZ;
+
+  ostream_params() {}
+
+  template <typename... T>
+  ostream_params(T... params, int oflag) : ostream_params(params...) {
+    this->oflag = oflag;
+  }
+
+  template <typename... T>
+  ostream_params(T... params, detail::buffer_size bs)
+      : ostream_params(params...) {
+    this->buffer_size = bs.value;
+  }
+};
+}  // namespace detail
+
+static constexpr detail::buffer_size buffer_size;
+
+// A fast output stream which is not thread-safe.
+class ostream : private detail::buffer<char> {
+ private:
+  file file_;
+  size_t buffer_size_;
+  std::unique_ptr<char[]> buffer_;
+
+  char* move_buffer(ostream&& other) {
+    buffer_ = std::move(other.buffer_);
+    buffer_size_ = other.buffer_size_;
+    return buffer_.get();
+  }
+
+  void flush() {
+    if (size() == 0) return;
+    file_.write(buffer_.get(), size());
+    clear();
+  }
+
+  void grow(size_t) final;
+
+  ostream(cstring_view path, const detail::ostream_params& params)
+      : file_(path, params.oflag),
+        buffer_size_(params.buffer_size),
+        buffer_(new char[params.buffer_size]) {
+    set(buffer_.get(), params.buffer_size);
+  }
+
+ public:
+  ostream(ostream&& other)
+      : file_(std::move(other.file_)),
+        buffer_size_(other.buffer_size_),
+        buffer_(std::move(other.buffer_)) {
+    other.clear();
+  }
+  ~ostream() { flush(); }
+
+  template <typename... T>
+  friend ostream output_file(cstring_view path, T... params);
+
+  void close() {
+    flush();
+    file_.close();
+  }
+
+  template <typename S, typename... Args>
+  void print(const S& format_str, const Args&... args) {
+    format_to(detail::buffer_appender<char>(*this), format_str, args...);
+  }
+};
+
+/**
+  Opens a file for writing. Supported parameters passed in `params`:
+  * ``<integer>``: Output flags (``file::WRONLY | file::CREATE`` by default)
+  * ``buffer_size=<integer>``: Output buffer size (``BUFSIZ`` by default)
+ */
+template <typename... T>
+inline ostream output_file(cstring_view path, T... params) {
+  return {path, detail::ostream_params(params...)};
+}
 #endif  // FMT_USE_FCNTL
 
 #ifdef FMT_LOCALE

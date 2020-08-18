@@ -1,4 +1,4 @@
-# SEACAS  [[Documentation](http://gsjaardema.github.io/seacas/)]
+# SEACAS  [[Documentation](http://gsjaardema.github.io/seacas/)] [[Wiki](https://github.com/gsjaardema/seacas/wiki)]
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/c82efc90be9943e08b71e2d16abaa370)](https://app.codacy.com/app/gsjaardema/seacas?utm_source=github.com&utm_medium=referral&utm_content=gsjaardema/seacas&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.org/gsjaardema/seacas.svg?branch=master)](https://travis-ci.org/gsjaardema/seacas)
 [![Analysis Status](https://scan.coverity.com/projects/2205/badge.svg?flat=1)](https://scan.coverity.com/projects/gsjaardema-seacas)
@@ -137,10 +137,7 @@ This will run through several of the SEACAS applications creating a mesh (exodus
 ## Exodus
 If you only want the exodus library, then follow most of the above instructions with the following exceptions:
 
-* You can either clone entire source tree as above, or you can
-	download a zip file containing only the exodus source (and
-	build-related files).  The url for the zip file is
-	<https://github.com/gsjaardema/seacas/archive/exodus.zip> NOTE: Probably out-of-date and better to just clone entire repository.
+* Clone entire source tree as above. (There used to be a zip file, but difficult to keep up-to-date)
 * You only need the netcdf and optionally hdf5 libraries
 * Use the `cmake-exodus` file instead of `cmake-config`.
 * This will build, by default, a shared exodus library and also install the exodus.py and exomerge.py Python interfaces.
@@ -195,7 +192,7 @@ a separate license:
 | [Catch2](https://github.com/catchorg/Catch2) | `packages/seacas/libraries/ioss/src/catch.hpp` | [Boost](http://www.boost.org/LICENSE_1_0.txt) |
 | [{fmt}](https://github.com/fmtlib/fmt) | `packages/seacas/libraries/ioss/src/fmt` | [BSD-2-Clause](https://github.com/fmtlib/fmt/blob/master/LICENSE.rst) |
 ## Ubuntu
-There is a [PPA](https://launchpad.net/~nschloe/+archive/ubuntu/seacas-nightly/) available for SEACAS that is updated nightly from SEACAS `master`. Anyone using Ubuntu can now just add the PPA and do
+[Not updated since 2017-11-30] There is a [PPA](https://launchpad.net/~nschloe/+archive/ubuntu/seacas-nightly/) available for SEACAS that is updated nightly from SEACAS `master`. Anyone using Ubuntu can now just add the PPA and do
 ```
 sudo add-apt-repository ppa:nschloe/seacas-nightly
 sudo apt-get update

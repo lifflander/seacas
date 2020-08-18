@@ -62,8 +62,8 @@ check_valid_yes_no SHARED
 BB=${BB:-NO}
 check_valid_yes_no BB
 
-CRAY=${CRAY:-NO}
-check_valid_yes_no CRAY
+CRAY=${CRAY:-OFF}
+check_valid_on_off CRAY
 
 # Which TPLS? (HDF5 and NetCDF always, PnetCDF if MPI=ON)
 CGNS=${CGNS:-ON}
