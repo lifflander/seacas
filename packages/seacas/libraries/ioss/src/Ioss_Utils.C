@@ -871,7 +871,7 @@ std::string Ioss::Utils::platform_information()
       fmt::format("Node: {0}, OS: {1} {2}, {3}, Machine: {4}", sys_info.nodename, sys_info.sysname,
                   sys_info.release, sys_info.version, sys_info.machine);
 #else
-  std::string                 info = "Node: Unknown, OS: Unknown, Machine: Unknown";
+  std::string info = "Node: Unknown, OS: Unknown, Machine: Unknown";
 #endif
   return info;
 }
@@ -979,10 +979,7 @@ size_t Ioss::Utils::get_hwm_memory_info()
 
 bool Ioss::Utils::block_is_omitted(Ioss::GroupingEntity *block)
 {
-  bool omitted = false;
-  if (block->property_exists("omitted")) {
-    omitted = (block->get_property("omitted").get_int() == 1);
-  }
+  bool omitted = block->get_optional_property("omitted", 0) == 1;
   return omitted;
 }
 
@@ -1328,11 +1325,11 @@ void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
     region->begin_mode(Ioss::STATE_DEFINE_MODEL);
 
     // Node Block
-    Ioss::NodeBlock *nb = new Ioss::NodeBlock(db, "nodeblock_1", 1, 3);
+    auto *nb = new Ioss::NodeBlock(db, "nodeblock_1", 1, 3);
     region->add(nb);
 
     // Element Block
-    Ioss::ElementBlock *eb = new Ioss::ElementBlock(db, "e1", "sphere", 1);
+    auto *eb = new Ioss::ElementBlock(db, "e1", "sphere", 1);
     eb->property_add(Ioss::Property("id", 1));
     eb->property_add(Ioss::Property("guid", 1));
     region->add(eb);
@@ -2116,11 +2113,10 @@ namespace {
       const auto &fbs = ss->get_side_blocks();
       for (const auto &ifb : fbs) {
         if (ifb->parent_block() != nullptr) {
-          auto               fb_name = ifb->parent_block()->name();
-          Ioss::EntityBlock *parent =
-              dynamic_cast<Ioss::EntityBlock *>(output_region.get_entity(fb_name));
+          auto  fb_name = ifb->parent_block()->name();
+          auto *parent  = dynamic_cast<Ioss::EntityBlock *>(output_region.get_entity(fb_name));
 
-          Ioss::SideBlock *ofb = surf->get_side_block(ifb->name());
+          auto *ofb = surf->get_side_block(ifb->name());
           ofb->set_parent_block(parent);
         }
       }
